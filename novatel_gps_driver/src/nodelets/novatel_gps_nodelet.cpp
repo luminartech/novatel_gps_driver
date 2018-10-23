@@ -172,23 +172,23 @@ namespace novatel_gps_driver
       device_(""),
       connection_type_("serial"),
       polling_period_(0.05),
-      publish_gpgsa_(false),
-      publish_gpgsv_(false),
+      publish_gpgsa_(true),
+      publish_gpgsv_(true),
       imu_rate_(100.0),
       imu_sample_rate_(-1),
-      publish_imu_messages_(false),
-      publish_novatel_positions_(false),
-      publish_novatel_utm_positions_(false),
-      publish_novatel_velocity_(false),
-      publish_nmea_messages_(false),
-      publish_range_messages_(false),
-      publish_time_messages_(false),
-      publish_trackstat_(false),
+      publish_imu_messages_(true),
+      publish_novatel_positions_(true),
+      publish_novatel_utm_positions_(true),
+      publish_novatel_velocity_(true),
+      publish_nmea_messages_(true),
+      publish_range_messages_(true),
+      publish_time_messages_(true),
+      publish_trackstat_(true),
       publish_diagnostics_(true),
       publish_sync_diagnostic_(true),
       reconnect_delay_s_(0.5),
-      use_binary_messages_(false),
-      span_frame_to_ros_frame_(false),
+      use_binary_messages_(true),
+      span_frame_to_ros_frame_(true),
       connection_(NovatelGps::SERIAL),
       last_sync_(ros::TIME_MIN),
       rolling_offset_(stats::tag::rolling_window::window_size = 10),
@@ -201,8 +201,8 @@ namespace novatel_gps_driver
       publish_rate_warnings_(0),
       measurement_count_(0),
       last_published_(ros::TIME_MIN),
-      imu_frame_id_(""),
-      frame_id_("")
+      imu_frame_id_("novatel"),
+      frame_id_("novatel")
     {
     }
 
@@ -257,63 +257,64 @@ namespace novatel_gps_driver
 
       sync_sub_ = swri::Subscriber(node, "gps_sync", 100, &NovatelGpsNodelet::SyncCallback, this);
 
-      std::string gps_topic = node.resolveName("gps");
+      std::string gps_topic = node.resolveName("novatel");
+      gps_topic+="/";
       gps_pub_ = swri::advertise<gps_common::GPSFix>(node, gps_topic, 100);
-      fix_pub_ = swri::advertise<sensor_msgs::NavSatFix>(node, "fix", 100);
+      fix_pub_ = swri::advertise<sensor_msgs::NavSatFix>(node, gps_topic+"fix", 100);
 
       if (publish_nmea_messages_)
       {
-        gpgga_pub_ = swri::advertise<novatel_gps_msgs::Gpgga>(node,"gpgga", 100);
-        gprmc_pub_ = swri::advertise<novatel_gps_msgs::Gprmc>(node,"gprmc", 100);
+        gpgga_pub_ = swri::advertise<novatel_gps_msgs::Gpgga>(node,gps_topic+"gpgga", 100);
+        gprmc_pub_ = swri::advertise<novatel_gps_msgs::Gprmc>(node,gps_topic+"gprmc", 100);
       }
 
       if (publish_gpgsa_)
       {
-        gpgsa_pub_ = swri::advertise<novatel_gps_msgs::Gpgsa>(node, "gpgsa", 100);
+        gpgsa_pub_ = swri::advertise<novatel_gps_msgs::Gpgsa>(node, gps_topic+"gpgsa", 100);
       }
 
       if (publish_imu_messages_)
       {
-        imu_pub_ = swri::advertise<sensor_msgs::Imu>(node, "imu", 100);
-        novatel_imu_pub_= swri::advertise<novatel_gps_msgs::NovatelCorrectedImuData>(node, "corrimudata", 100);
-        insstdev_pub_ = swri::advertise<novatel_gps_msgs::Insstdev>(node, "insstdev", 100);
-        inspva_pub_ = swri::advertise<novatel_gps_msgs::Inspva>(node, "inspva", 100);
-        inscov_pub_ = swri::advertise<novatel_gps_msgs::Inscov>(node, "inscov", 100);
+        imu_pub_ = swri::advertise<sensor_msgs::Imu>(node, gps_topic+"imu", 100);
+        novatel_imu_pub_= swri::advertise<novatel_gps_msgs::NovatelCorrectedImuData>(node, gps_topic+"corrimudata", 100);
+        insstdev_pub_ = swri::advertise<novatel_gps_msgs::Insstdev>(node, gps_topic+"insstdev", 100);
+        inspva_pub_ = swri::advertise<novatel_gps_msgs::Inspva>(node, gps_topic+"inspva", 100);
+        inscov_pub_ = swri::advertise<novatel_gps_msgs::Inscov>(node,gps_topic+ "inscov", 100);
       }
 
       if (publish_gpgsv_)
       {
-        gpgsv_pub_ = swri::advertise<novatel_gps_msgs::Gpgsv>(node, "gpgsv", 100);
+        gpgsv_pub_ = swri::advertise<novatel_gps_msgs::Gpgsv>(node, gps_topic+"gpgsv", 100);
       }
 
       if (publish_novatel_positions_)
       { 
-        novatel_position_pub_ = swri::advertise<novatel_gps_msgs::NovatelPosition>(node, "bestpos", 100);
+        novatel_position_pub_ = swri::advertise<novatel_gps_msgs::NovatelPosition>(node, gps_topic+"bestpos", 100);
       }
 
       if (publish_novatel_utm_positions_)
       { 
-        novatel_utm_pub_ = swri::advertise<novatel_gps_msgs::NovatelUtmPosition>(node, "bestutm", 100);
+        novatel_utm_pub_ = swri::advertise<novatel_gps_msgs::NovatelUtmPosition>(node, gps_topic+"bestutm", 100);
       }
 
       if (publish_novatel_velocity_)
       {
-        novatel_velocity_pub_ = swri::advertise<novatel_gps_msgs::NovatelVelocity>(node, "bestvel", 100);
+        novatel_velocity_pub_ = swri::advertise<novatel_gps_msgs::NovatelVelocity>(node, gps_topic+"bestvel", 100);
       }
 
       if (publish_range_messages_)
       {
-        range_pub_ = swri::advertise<novatel_gps_msgs::Range>(node, "range", 100);
+        range_pub_ = swri::advertise<novatel_gps_msgs::Range>(node, gps_topic+"range", 100);
       }
 
       if (publish_time_messages_)
       {
-        time_pub_ = swri::advertise<novatel_gps_msgs::Time>(node, "time", 100);
+        time_pub_ = swri::advertise<novatel_gps_msgs::Time>(node, gps_topic+"time", 100);
       }
 
       if (publish_trackstat_)
       {
-        trackstat_pub_ = swri::advertise<novatel_gps_msgs::Trackstat>(node, "trackstat", 100);
+        trackstat_pub_ = swri::advertise<novatel_gps_msgs::Trackstat>(node, gps_topic+"trackstat", 100);
       }
 
       hw_id_ = "Novatel GPS (" + device_ +")";

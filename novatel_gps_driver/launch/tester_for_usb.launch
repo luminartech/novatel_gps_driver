@@ -8,7 +8,7 @@
       connection_type: serial
       device: /dev/ttyUSB0
       publish_novatel_positions: true
-      frame_id: /gps
+      frame_id: novatel/gps
     </rosparam>
   </node>
 </launch>
